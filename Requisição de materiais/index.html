@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratório CIAP - Requisição de Materiais</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F8FAFC; 
+    --surface: #FFFFFF;
+    --surface2: #F1F5F9;
+    --border: #E2E8F0;
+    --border2: #CBD5E1;
+    --text: #1E293B;
+    --text2: #475569;
+    --text3: #94A3B8;
+    
+    /* CORES EXTRAÍDAS DA LOGO CIAP */
+    --accent: #E3262A;          /* Vermelho Vivo */
+    --logo-grey: #7F8182;       /* Cinza Oficial */
+    --accent-light: #FFF5F5;    
+    --accent-mid: #C51F23;      
+    
+    --danger: #EF4444;
+    --danger-light: #FEE2E2;
+    --warn: #F59E0B;
+    --warn-light: #FEF3C7;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 3px solid var(--surface2);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 75px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .brand-name {
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--logo-grey);
+    line-height: 1.1;
+    letter-spacing: 0.5px;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 1px;
+  }
+  .nav-container { display: flex; gap: 6px; }
+  .nav-btn {
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+  }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { background: var(--accent); color: white; }
+  main { max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+  h1 { font-size: 26px; font-weight: 700; color: var(--logo-grey); margin-bottom: 1rem; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+  }
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    border-left: 3px solid var(--accent);
+    padding-left: 8px;
+  }
+  .field { margin-bottom: 1.25rem; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  input[type=text], input[type=number], textarea, select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.2s;
+    outline: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(227,38,42,0.1); }
+  textarea { resize: vertical; min-height: 90px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .mat-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .mat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+  .mat-item select { flex:1; background: transparent; border: none; padding: 0; box-shadow: none; font-weight: 500; cursor: pointer; }
+  .mat-item select:focus { background: var(--surface); border: 1px solid var(--border); padding: 4px 8px; border-radius: var(--radius); }
+  .mat-item input[type=number] { width: 85px; background: var(--surface); text-align: center; font-weight: 600; }
+  .mat-label { font-size: 13px; color: var(--text2); font-weight: 600; }
+  .btn-ghost {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); padding: 6px; border-radius: var(--radius);
+    transition: all 0.15s; display: flex; align-items: center;
+  }
+  .btn-ghost:hover { background: var(--danger-light); color: var(--danger); }
+  .btn-add {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: var(--radius);
+    border: 2px dashed var(--border2);
+    background: transparent; color: var(--text2);
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; width: 100%; justify-content: center;
+    transition: all 0.2s;
+  }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px;
+    background: var(--accent);
+    color: white;
+    border: none; border-radius: var(--radius);
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary:hover { background: var(--accent-mid); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .form-footer { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    padding: 14px 24px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 600;
+    box-shadow: var(--shadow-lg); z-index: 999;
+    display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .toast.success { background: var(--text); color: white; border-bottom: 3px solid var(--accent); }
+  .toast.error { background: var(--danger); color: white; }
+  .req-list { display: flex; flex-direction: column; gap: 14px; }
+  .req-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow);
+    transition: all 0.2s;
+  }
+  .req-card:hover { box-shadow: var(--shadow-lg); border-color: var(--border2); }
+  .req-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .req-hospital { font-weight: 700; font-size: 17px; color: var(--logo-grey); }
+  .req-phone { font-size: 13px; color: var(--text2); margin-top: 2px; font-weight: 500; }
+  .req-id {
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600;
+    background: var(--surface2); color: var(--text2);
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .mat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .mat-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--accent-light); color: var(--text);
+    border-radius: 6px; padding: 4px 12px;
+    font-size: 13px; font-weight: 500; border: 1px solid rgba(223,38,42,0.15);
+  }
+  .mat-chip .qty {
+    background: var(--accent); color: white;
+    border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 700;
+  }
+  .req-obs {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--surface2);
+    font-size: 13px; color: var(--text2); font-style: italic;
+  }
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text3); }
+  .empty-icon { font-size: 48px; margin-bottom: 1rem; opacity: 0.5; }
+  .loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4rem; color: var(--text2); }
+  .spinner {
+    width: 24px; height: 24px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stats-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow);
+  }
+  .stat-num { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat-lbl { font-size: 12px; color: var(--text2); font-weight: 600; text-transform: uppercase; }
+  .list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .btn-refresh {
+    display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface); color: var(--text2); font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-refresh:hover { background: var(--surface2); color: var(--accent); }
+  .filter-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .search-bar { position: relative; }
+  .search-bar svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); }
+  .search-bar input { padding-left: 42px; height: 44px; }
+  @media (max-width: 600px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr; }
+    .filter-row { grid-template-columns: 1fr; gap: 0.5rem; }
+    header { padding: 0 1rem; }
+    .brand-sub { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-container">
+    <div class="logo-text">
+      <span class="brand-name">CIAP</span>
+      <span class="brand-sub">Citologia e Anatomia Patológica</span>
+    </div>
+  </div>
+  <div class="nav-container">
+    <button class="nav-btn active" onclick="showPage('nova', this)">Nova Requisição</button>
+    <button class="nav-btn" onclick="showPage('lista', this)">Ver Requisições</button>
+  </div>
+</header>
+
+<main>
+  <div id="page-nova" class="page active">
+    <h1>Requisição de Materiais</h1>
+
+
+    <div class="card">
+      <div class="section-label">Identificação do Requisitante</div>
+      <div class="row-2">
+        <div class="field">
+          <label>Hospital / Médico / Clínica Solicitante *</label>
+          <input type="text" id="hospital" placeholder="Ex: Hospital São João de Deus">
+        </div>
+        <div class="field">
+          <label>Telefone de Contato </label>
+          <input type="text" id="telefone" placeholder="Ex: (37) 3222-4100">
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top: 1rem;">Selecione os Materiais Necessários</div>
+      <div class="mat-list" id="mat-list"></div>
+      <button class="btn-add" onclick="addMaterial()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Adicionar Item à Lista
+      </button>
+
+      <div class="field" style="margin-top: 1.5rem;">
+        <label>Observações e Instruções Especiais <span style="color:var(--text3); font-weight:400">(opcional)</span></label>
+        <textarea id="observacao" placeholder="Ex: Informações para entrega ou especificações de itens..."></textarea>
+      </div>
+
+<label>ENTREGAS CONFORME PROGRAMAÇÃO DEFINIDA. RETIRADAS NA RECEPÇÃO MEDIANTE PREENCHIMENTO E SINALIZAÇÃO. </label>
+
+      <div class="form-footer">
+        <button class="btn-primary" id="btn-submit" onclick="submitForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+          Enviar Requisição
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-lista" class="page">
+    <h1>Painel de Monitoramento</h1>
+    
+    <div class="stats" id="stats-area"></div>
+
+    <div class="list-header">
+      <div class="section-label" style="margin:0">Histórico de Pedidos</div>
+      <button class="btn-refresh" onclick="loadReqs()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>
+        Sincronizar Banco
+      </button>
+    </div>
+
+    <div class="filter-row">
+      <div class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="Buscar por nome do requisitante..." oninput="filterReqs()">
+      </div>
+      <div>
+        <select id="date-filter" onchange="filterReqs()" style="height: 44px;">
+          <option value="todos">Todas as datas</option>
+          <option value="hoje">Enviados hoje</option>
+          <option value="7dias">Últimos 7 dias</option>
+          <option value="mes">Este mês</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+      <label style="display:block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Agrupar os resultados por:</label>
+      <select id="group-by" onchange="filterReqs()" style="width: 100%; max-width: 320px; height: 42px; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 14px; font-family: inherit; font-size: 14px; background: var(--surface); color: var(--text); font-weight: 600; cursor: pointer; outline: none;">
+        <option value="nenhum">Nenhum (Ordem padrão decrescente)</option>
+        <option value="data">📅 Data de Envio</option>
+        <option value="status">🚦 Status do Pedido</option>
+      </select>
+    </div>
+
+    <div id="req-area">
+      <div class="loading"><div class="spinner"></div> Carregando dados da planilha...</div>
+    </div>
+  </div>
+</main>
+
+<div id="toast-container"></div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzBJPpVZ8_93752DRfHI3fNf0R91_fVcbLdVaVydtCDnNGv8nc-jnLS94dTL9cvXCOE/exec';
+
+const materiaisDisponiveis = [
+  "Bloco de Pedido médico",
+  "Escova cervical + Espátula de Ayre (pctes c/ 16)",
+  "Etiquetas p/ frascos (pcte c/ 30)",
+  "Frasco de 180 ml c/ formol",
+  "Frasco de 700 ml c/ formol",
+  "Frasco de 2 L c/ formol",
+  "Galão de formol - 5 L",
+  "Kit Biópsia (16 frascos de 35 ml c/ formol)",
+  "Kit Citologia em Álcool (16 frascos c/ álcool + lâmina)",
+  "Kit Citologia em meio líquido (Gynoprep)", 
+  "Kit Citologia Seca (cx c/ 16 frascos + lâmina)",
+  "Lâminas foscas (cx c/ 50)",
+  "Sacola personalizada (pcte c/ 16)",
+  "Spray citológico fixador"
+];
+
+let allReqs = [];
+let matCount = 0;
+
+function showPage(p, btn) {
+  document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
+  
+  document.getElementById('page-' + p).classList.add('active');
+  
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    const targetBtn = p === 'nova' ? document.querySelectorAll('.nav-btn')[0] : document.querySelectorAll('.nav-btn')[1];
+    if (targetBtn) targetBtn.classList.add('active');
+  }
+  
+  if (p === 'lista') loadReqs();
+}
+
+function addMaterial(nome='', qtd=1) {
+  matCount++;
+  const id = 'mat-' + matCount;
+  const div = document.createElement('div');
+  div.className = 'mat-item';
+  div.id = id;
+
+  let optionsHtml = '<option value="" disabled selected>Escolha o item de insumo...</option>';
+  materiaisDisponiveis.forEach(mat => {
+    const selected = mat === nome ? 'selected' : '';
+    optionsHtml += `<option value="${mat}" ${selected}>${mat}</option>`;
+  });
+
+  div.innerHTML = `
+    <select class="mat-nome">${optionsHtml}</select>
+    <span class="mat-label">Qtd</span>
+    <input type="number" min="1" value="${qtd}" class="mat-qtd">
+    <button class="btn-ghost" onclick="document.getElementById('${id}').remove()" title="Remover item">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>`;
+  document.getElementById('mat-list').appendChild(div);
+  div.querySelector('.mat-nome').focus();
+}
+
+async function submitForm() {
+  const hospital = document.getElementById('hospital').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
+  const observacao = document.getElementById('observacao').value.trim();
+
+  if (!hospital) { toast('Preencha os campos obrigatórios (*).', 'error'); return; }
+
+  const mats = [];
+  document.querySelectorAll('.mat-item').forEach(item => {
+    const nome = item.querySelector('.mat-nome').value;
+    const qtd = parseInt(item.querySelector('.mat-qtd').value) || 1;
+    if (nome) mats.push({ nome, quantity: qtd });
+  });
+  if (!mats.length) { toast('Adicione pelo menos um insumo à lista.', 'error'); return; }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;border-top-color:white"></div> Registrando...';
+
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      mode: 'no-cors', 
+      redirect: 'follow',
+      body: JSON.stringify({ hospital, telefone, materiais: mats, observacao: observacao || null })
+    });
+    
+    toast(`✓ Pedido enviado com sucesso para o CIAP!`, 'success');
+    clearForm();
+  } catch(e) {
+    toast('Erro na conexão. Verifique os parâmetros do script.', 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Enviar Requisição';
+}
+
+function clearForm() {
+  document.getElementById('hospital').value = '';
+  document.getElementById('telefone').value = '';
+  document.getElementById('observacao').value = '';
+  document.getElementById('mat-list').innerHTML = '';
+  addMaterial();
+}
+
+async function loadReqs() {
+  document.getElementById('req-area').innerHTML = '<div class="loading"><div class="spinner"></div> Buscando dados atualizados...</div>';
+  try {
+    const res = await fetch(API);
+    allReqs = await res.json();
+    filterReqs(); 
+  } catch(e) {
+    renderStats([]); 
+    document.getElementById('req-area').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <p>Não foi possível sincronizar com o banco de dados.</p>
+        <p style="font-size:12px;margin-top:8px;font-family:monospace;color:var(--text3)">Verifique se o Apps Script está implantado de forma pública.</p>
+      </div>`;
+  }
+}
+
+function renderStats(data) {
+  const area = document.getElementById('stats-area');
+  const totalReqs = data ? data.length : 0;
+  
+  const totalMats = data ? data.reduce((s, r) => {
+    if (!r.materiais) return s;
+    return s + r.materiais.reduce((sum, m) => sum + (parseInt(m.quantidade || m.quantity) || 1), 0);
+  }, 0) : 0;
+  
+  const hospitais = data ? new Set(data.map(r => r.hospital).filter(Boolean)).size : 0;
+  
+  area.innerHTML = `
+    <div class="stat-card"><div class="stat-num">${totalReqs}</div><div class="stat-lbl">Total Pedidos</div></div>
+    <div class="stat-card"><div class="stat-num">${hospitais}</div><div class="stat-lbl">Requisitantes</div></div>
+    <div class="stat-card"><div class="stat-num">${totalMats}</div><div class="stat-lbl">Insumos Solicitados</div></div>`;
+}
+
+function parseSheetDate(dStr) {
+  if (!dStr) return null;
+  if (typeof dStr === 'string' && dStr.includes('/')) {
+    const parts = dStr.split(' ')[0].split('/');
+    if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+  }
+  const d = new Date(dStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatarData(dStr) {
+  if (!dStr) return '';
+  if (typeof dStr === 'string' && dStr.includes('/')) {
+    return dStr.split(' ')[0];
+  }
+  if (typeof dStr === 'string' && dStr.includes('T') && dStr.includes('-')) {
+    const apenasData = dStr.split('T')[0];
+    const partes = apenasData.split('-');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+  }
+  return dStr;
+}
+
+function ocultarTelefone(tel) {
+  if (tel === undefined || tel === null) return 'Não informado';
+  const limpo = String(tel).trim(); 
+  if (!limpo) return 'Não informado';
+  if (limpo.length <= 4) return '******';
+  return '******-' + limpo.slice(-4);
+}
+
+function filterReqs() {
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  const period = document.getElementById('date-filter').value;
+  
+  let filtered = allReqs.filter(r => r.hospital && r.hospital.toLowerCase().includes(q));
+  
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  
+  if (period !== 'todos') {
+    filtered = filtered.filter(r => {
+      const rDate = parseSheetDate(r.data || r.date || r.timestamp);
+      if (!rDate) return false;
+      rDate.setHours(0,0,0,0);
+      
+      const diffTime = now - rDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (period === 'hoje') return diffDays === 0;
+      if (period === '7dias') return diffDays >= 0 && diffDays <= 7;
+      if (period === 'mes') return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
+      return true;
+    });
+  }
+  
+  renderStats(filtered);
+  renderReqs(filtered);
+}
+
+/* SEÇÃO ALTERADA: REGISTRA DATA E HORA DE MUDANÇA DE STATUS */
+function changeStatus(id, value) {
+  localStorage.setItem('status_' + id, value);
+  
+  if (value === 'entregue') {
+    const agora = new Date();
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    const horas = String(agora.getHours()).padStart(2, '0');
+    const minutos = String(agora.getMinutes()).padStart(2, '0');
+    
+    const dataFormatada = `${dia}/${mes}/${ano} às ${horas}:${minutos}`;
+    localStorage.setItem('status_date_' + id, dataFormatada);
+  } else {
+    // Se voltar para pendente, apaga o registro de data de alteração
+    localStorage.removeItem('status_date_' + id);
+  }
+
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    if (value === 'entregue') {
+      card.style.borderLeft = '5px solid #10B981';
+    } else {
+      card.style.borderLeft = '1px solid var(--border)';
+    }
+  }
+  toast(`Status do pedido #${id} atualizado.`, 'success');
+  filterReqs(); 
+}
+
+function buildCardHtml(r) {
+  const status = localStorage.getItem('status_' + r.id) || '';
+  const statusDate = localStorage.getItem('status_date_' + r.id) || ''; // Puxa a data de alteração
+  const borderStyle = status === 'entregue' ? 'border-left: 5px solid #10B981;' : '';
+  const dateStr = r.data || r.date || r.timestamp || '';
+  const dataExibicao = formatarData(dateStr);
+  
+  return `
+    <div class="req-card" id="card-${r.id}" style="${borderStyle}">
+      <div class="req-header">
+        <div>
+          <div class="req-hospital">${escHtml(r.hospital)}</div>
+          <div class="req-phone">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:4px;color:var(--accent)"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.06 1.18 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91A16 16 0 0016 17.91l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+            Contato: ${escHtml(ocultarTelefone(r.telefone))}
+            ${dataExibicao ? `<span style="color:var(--text3); margin-left:10px;">| Envio: ${escHtml(dataExibicao)}</span>` : ''}
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+          <span class="req-id">PEDIDO #${r.id}</span>
+          <select onchange="changeStatus('${r.id}', this.value)" style="padding: 4px 8px; height: auto; font-size: 12px; width: 120px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600; background: #fff; cursor: pointer; outline:none;">
+            <option value="" ${status === '' ? 'selected' : ''}>⏳ Pendente</option>
+            <option value="entregue" ${status === 'entregue' ? 'selected' : ''}>✔️ Entregue</option>
+          </select>
+          ${statusDate ? `<span style="font-size: 11px; color: #10B981; font-weight: 600; background: #E6F4EA; padding: 2px 6px; border-radius: 4px; margin-top: 3px; display: inline-flex; align-items: center; gap:3px;">⏱️ ${statusDate}</span>` : ''}
+        </div>
+      </div>
+      <div class="mat-chips">${r.materiais ? r.materiais.map(m => `<span class="mat-chip"><span class="qty">${m.quantidade || m.quantity || 1}</span>${escHtml(m.nome)}</span>`).join('') : ''}</div>
+      ${r.observacao ? `<div class="req-obs"><b>Nota:</b> ${escHtml(r.observacao)}</div>` : ''}
+    </div>`;
+}
+
+function renderReqs(list) {
+  const area = document.getElementById('req-area');
+  if (!list.length) {
+    area.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Nenhum registro encontrado para este filtro.</p></div>';
+    return;
+  }
+  
+  const groupBy = document.getElementById('group-by').value;
+  
+  if (groupBy === 'data') {
+    const grouped = {};
+    list.forEach(r => {
+      const fullDate = r.data || r.date || r.timestamp || '';
+      const justDate = fullDate ? formatarData(fullDate) : 'Sem data informada';
+      if (!grouped[justDate]) grouped[justDate] = [];
+      grouped[justDate].push(r);
+    });
+    
+    const sortedDates = Object.keys(grouped).sort((a, b) => {
+      if (a === 'Sem data informada') return 1;
+      if (b === 'Sem data informada') return -1;
+      const pA = a.split('/');
+      const pB = b.split('/');
+      const keyA = pA[2] + pA[1] + pA[0]; 
+      const keyB = pB[2] + pB[1] + pB[0];
+      return keyB.localeCompare(keyA);
+    });
+    
+    let html = '';
+    sortedDates.forEach(date => {
+      html += `
+        <div style="margin: 2rem 0 0.75rem 0; font-weight: 700; color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Pedidos solicitados em: ${date} (${grouped[date].length})
+        </div>`;
+      html += '<div class="req-list">' + grouped[date].map(r => buildCardHtml(r)).join('') + '</div>';
+    });
+    area.innerHTML = html;
+
+  } else if (groupBy === 'status') {
+    const grouped = { 'pendente': [], 'entregue': [] };
+    
+    list.forEach(r => {
+      const status = localStorage.getItem('status_' + r.id) || '';
+      const key = status === 'entregue' ? 'entregue' : 'pendente';
+      grouped[key].push(r);
+    });
+    
+    const statusLabels = {
+      'pendente': '⏳ Pedidos Pendentes / Em Aberto',
+      'entregue': '✔️ Pedidos Entregues'
+    };
+    
+    let html = '';
+    const keys = ['pendente', 'entregue'];
+    
+    keys.forEach(key => {
+      if (grouped[key].length > 0) {
+        const isEntregue = key === 'entregue';
+        html += `
+          <div style="margin: 2rem 0 0.75rem 0; font-weight: 700; color: ${isEntregue ? '#10B981' : 'var(--warn)'}; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+            ${isEntregue ? 
+              `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>` : 
+              `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+            }
+            ${statusLabels[key]} (${grouped[key].length})
+          </div>`;
+        html += '<div class="req-list">' + grouped[key].slice().reverse().map(r => buildCardHtml(r)).join('') + '</div>';
+      }
+    });
+    area.innerHTML = html || '<div class="empty-state"><div class="empty-icon">📋</div><p>Nenhum registro encontrado.</p></div>';
+
+  } else {
+    area.innerHTML = '<div class="req-list">' + list.slice().reverse().map(r => buildCardHtml(r)).join('') + '</div>';
+  }
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// INICIALIZAÇÃO
+renderStats([]); 
+addMaterial();
+</script>
+</body>
+</html>
