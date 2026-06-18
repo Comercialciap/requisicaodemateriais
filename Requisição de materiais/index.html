@@ -267,7 +267,6 @@
   <div id="page-nova" class="page active">
     <h1>Requisição de Materiais</h1>
 
-
     <div class="card">
       <div class="section-label">Identificação do Requisitante</div>
       <div class="row-2">
@@ -293,7 +292,7 @@
         <textarea id="observacao" placeholder="Ex: Informações para entrega ou especificações de itens..."></textarea>
       </div>
 
-<label>ENTREGAS CONFORME PROGRAMAÇÃO DEFINIDA. RETIRADAS NA RECEPÇÃO MEDIANTE PREENCHIMENTO E SINALIZAÇÃO. </label>
+      <label style="display:block; margin-bottom: 1.5rem; font-size:12px; color:var(--text2); font-weight:600;">ENTREGAS CONFORME PROGRAMAÇÃO DEFINIDA. RETIRADAS NA RECEPÇÃO MEDIANTE PREENCHIMENTO E SINALIZAÇÃO. </label>
 
       <div class="form-footer">
         <button class="btn-primary" id="btn-submit" onclick="submitForm()">
@@ -436,7 +435,7 @@ async function submitForm() {
       method: 'POST',
       mode: 'no-cors', 
       redirect: 'follow',
-      body: JSON.stringify({ hospital, telefone, materiais: mats, observacao: observacao || null })
+      body: JSON.stringify({ action: 'createRequest', hospital, telefone, materiais: mats, observacao: observacao || null })
     });
     
     toast(`✓ Pedido enviado com sucesso para o CIAP!`, 'success');
@@ -486,9 +485,9 @@ function renderStats(data) {
   const hospitais = data ? new Set(data.map(r => r.hospital).filter(Boolean)).size : 0;
   
   area.innerHTML = `
-    <div class="stat-card"><div class="stat-num">${totalReqs}</div><div class="stat-lbl">Total Pedidos</div></div>
-    <div class="stat-card"><div class="stat-num">${hospitais}</div><div class="stat-lbl">Requisitantes</div></div>
-    <div class="stat-card"><div class="stat-num">${totalMats}</div><div class="stat-lbl">Insumos Solicitados</div></div>`;
+    <div class="stats-card"><div class="stat-num">${totalReqs}</div><div class="stat-lbl">Total Pedidos</div></div>
+    <div class="stats-card"><div class="stat-num">${hospitais}</div><div class="stat-lbl">Requisitantes</div></div>
+    <div class="stats-card"><div class="stat-num">${totalMats}</div><div class="stat-lbl">Insumos Solicitados</div></div>`;
 }
 
 function parseSheetDate(dStr) {
@@ -553,40 +552,55 @@ function filterReqs() {
   renderReqs(filtered);
 }
 
-/* SEÇÃO ALTERADA: REGISTRA DATA E HORA DE MUDANÇA DE STATUS */
-function changeStatus(id, value) {
-  localStorage.setItem('status_' + id, value);
+/* FUNÇÃO ALTERADA: ENVIA O STATUS E DATA PARA A PLANILHA DO GOOGLE */
+async function changeStatus(id, value) {
+  const agora = new Date();
+  const dia = String(agora.getDate()).padStart(2, '0');
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const ano = agora.getFullYear();
+  const horas = String(agora.getHours()).padStart(2, '0');
+  const minutos = String(agora.getMinutes()).padStart(2, '0');
   
-  if (value === 'entregue') {
-    const agora = new Date();
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
-    const ano = agora.getFullYear();
-    const horas = String(agora.getHours()).padStart(2, '0');
-    const minutos = String(agora.getMinutes()).padStart(2, '0');
-    
-    const dataFormatada = `${dia}/${mes}/${ano} às ${horas}:${minutos}`;
-    localStorage.setItem('status_date_' + id, dataFormatada);
-  } else {
-    // Se voltar para pendente, apaga o registro de data de alteração
-    localStorage.removeItem('status_date_' + id);
-  }
+  const dataFormatada = value === 'entregue' ? `${dia}/${mes}/${ano} às ${horas}:${minutos}` : '';
 
+  // Atualização visual imediata local
   const card = document.getElementById('card-' + id);
   if (card) {
-    if (value === 'entregue') {
-      card.style.borderLeft = '5px solid #10B981';
-    } else {
-      card.style.borderLeft = '1px solid var(--border)';
-    }
+    card.style.borderLeft = value === 'entregue' ? '5px solid #10B981' : '1px solid var(--border)';
   }
-  toast(`Status do pedido #${id} atualizado.`, 'success');
-  filterReqs(); 
+
+  toast(`Salvando alteração na planilha...`, 'success');
+
+  try {
+    await fetch(API, {
+      method: 'POST',
+      mode: 'no-cors',
+      redirect: 'follow',
+      body: JSON.stringify({
+        action: 'updateStatus',
+        id: id,
+        status: value,
+        statusDate: dataFormatada
+      })
+    });
+    
+    // Atualiza a memória local para não precisar recarregar o banco inteiro
+    const req = allReqs.find(r => String(r.id) === String(id));
+    if (req) {
+      req.status = value;
+      req.statusDate = dataFormatada;
+    }
+    
+    toast(`Status do pedido #${id} atualizado globalmente!`, 'success');
+    filterReqs();
+  } catch (e) {
+    toast('Erro de conexão ao salvar status na planilha.', 'error');
+  }
 }
 
 function buildCardHtml(r) {
-  const status = localStorage.getItem('status_' + r.id) || '';
-  const statusDate = localStorage.getItem('status_date_' + r.id) || ''; // Puxa a data de alteração
+  const status = (r.status || '').toLowerCase();
+  const statusDate = r.statusDate || ''; 
   const borderStyle = status === 'entregue' ? 'border-left: 5px solid #10B981;' : '';
   const dateStr = r.data || r.date || r.timestamp || '';
   const dataExibicao = formatarData(dateStr);
@@ -659,7 +673,7 @@ function renderReqs(list) {
     const grouped = { 'pendente': [], 'entregue': [] };
     
     list.forEach(r => {
-      const status = localStorage.getItem('status_' + r.id) || '';
+      const status = (r.status || '').toLowerCase();
       const key = status === 'entregue' ? 'entregue' : 'pendente';
       grouped[key].push(r);
     });
