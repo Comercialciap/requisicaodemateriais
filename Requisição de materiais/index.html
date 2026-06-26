@@ -235,16 +235,75 @@
     border: 1px solid var(--border); background: var(--surface); color: var(--text2); font-weight: 600; cursor: pointer; transition: all 0.2s;
   }
   .btn-refresh:hover { background: var(--surface2); color: var(--accent); }
-  .filter-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .filter-row { display: grid; grid-template-columns: 2fr 1fr 1.5fr; gap: 1rem; margin-bottom: 1rem; }
   .search-bar { position: relative; }
   .search-bar svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); }
   .search-bar input { padding-left: 42px; height: 44px; }
+  
+  /* CONTAINER DO CAMPO LOGÍSTICA AJUSTADO IGUAL AO ESTILO DOS OUTROS CAMPOS */
+  .delivery-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 6px;
+    background: var(--surface); /* Fundo branco para coincidir o estilo */
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+  }
+  .delivery-option-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text2);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+  }
+  .delivery-option-label:hover {
+    color: var(--text);
+  }
+  .delivery-option-label input[type="radio"] {
+    accent-color: var(--accent);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
   @media (max-width: 600px) {
     .row-2 { grid-template-columns: 1fr; }
     .stats { grid-template-columns: 1fr; }
     .filter-row { grid-template-columns: 1fr; gap: 0.5rem; }
     header { padding: 0 1rem; }
     .brand-sub { display: none; }
+
+    /* AJUSTE DE RESPONSIVIDADE PARA SELEÇÃO DE INSUMOS NO CELULAR */
+    .mat-item {
+      flex-wrap: wrap;
+      padding: 12px;
+      gap: 10px;
+    }
+    .mat-item select {
+      flex: 1 1 100%;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+    }
+    .mat-item select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(227,38,42,0.1);
+    }
+    .mat-item .mat-label {
+      margin-left: 4px;
+    }
+    .mat-item .btn-ghost {
+      margin-left: auto; /* Empurra o botão de lixeira para a direita */
+    }
   }
 </style>
 </head>
@@ -272,11 +331,11 @@
       <div class="row-2">
         <div class="field">
           <label>Hospital / Médico / Clínica Solicitante *</label>
-          <input type="text" id="hospital" placeholder="Ex: Hospital São João de Deus">
+          <input type="text" id="hospital" placeholder="Ex: Hospital São João de Deus" oninput="this.value = this.value.replace(/[^a-zA-Z0-9À-ÿ ]/g, '')">
         </div>
         <div class="field">
           <label>Telefone de Contato </label>
-          <input type="text" id="telefone" placeholder="Ex: (37) 3222-4100">
+          <input type="text" id="telefone" placeholder="Ex: 3798827-0687" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         </div>
       </div>
 
@@ -292,7 +351,19 @@
         <textarea id="observacao" placeholder="Ex: Informações para entrega ou especificações de itens..."></textarea>
       </div>
 
-      <label style="display:block; margin-bottom: 1.5rem; font-size:12px; color:var(--text2); font-weight:600;">ENTREGAS CONFORME PROGRAMAÇÃO DEFINIDA. RETIRADAS NA RECEPÇÃO MEDIANTE PREENCHIMENTO E SINALIZAÇÃO. </label>
+      <div class="section-label" style="margin-top: 1.5rem;">Opção de Recebimento</div>
+      <div class="delivery-options-container">
+        <label class="delivery-option-label">
+          <input type="radio" name="opcao_entrega" value="Entrega programada (conforme cronograma)" checked>
+          <span>🚚 Entrega programada (conforme cronograma)</span>
+        </label>
+        <label class="delivery-option-label">
+          <input type="radio" name="opcao_entrega" value="Retirada na recepção do CIAP">
+          <span>🏢 Retirada na recepção do CIAP</span>
+        </label>
+      </div>
+
+      <label style="color: var(--text3); font-size:12px; margin-top:10px; display:block; text-align: center;">❗AS ENTREGAS PROGRAMADAS PODERÃO SOFRER ALTERAÇÕES CONFORME A DEMANDA E A LOGÍSTICA DO SETOR❗</label>
 
       <div class="form-footer">
         <button class="btn-primary" id="btn-submit" onclick="submitForm()">
@@ -329,14 +400,22 @@
           <option value="mes">Este mês</option>
         </select>
       </div>
+      <div>
+        <select id="delivery-filter" onchange="filterReqs()" style="height: 44px;">
+          <option value="todos">Todas as opções de entrega</option>
+          <option value="Entrega programada">Apenas Entregas</option>
+          <option value="Retirada">Apenas Retiradas</option>
+        </select>
+      </div>
     </div>
     
     <div style="margin-bottom: 1.5rem;">
       <label style="display:block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Agrupar os resultados por:</label>
-      <select id="group-by" onchange="filterReqs()" style="width: 100%; max-width: 320px; height: 42px; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 14px; font-family: inherit; font-size: 14px; background: var(--surface); color: var(--text); font-weight: 600; cursor: pointer; outline: none;">
+      <select id="group-by" onchange="filterReqs()" style="width: 100%; max-width: 360px; height: 42px; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 14px; font-family: inherit; font-size: 14px; background: var(--surface); color: var(--text); cursor: pointer; outline: none;">
         <option value="nenhum">Nenhum (Ordem padrão decrescente)</option>
         <option value="data">📅 Data de Envio</option>
         <option value="status">🚦 Status do Pedido</option>
+        <option value="entrega_status">🚚 Opção de Entrega &amp; Status</option>
       </select>
     </div>
 
@@ -403,7 +482,7 @@ function addMaterial(nome='', qtd=1) {
   div.innerHTML = `
     <select class="mat-nome">${optionsHtml}</select>
     <span class="mat-label">Qtd</span>
-    <input type="number" min="1" value="${qtd}" class="mat-qtd">
+    <input type="number" min="0" max="30" step="1" value="${qtd}" class="mat-qtd">
     <button class="btn-ghost" onclick="document.getElementById('${id}').remove()" title="Remover item">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>`;
@@ -415,15 +494,25 @@ async function submitForm() {
   const hospital = document.getElementById('hospital').value.trim();
   const telefone = document.getElementById('telefone').value.trim();
   const observacao = document.getElementById('observacao').value.trim();
+  
+  // Captura a opção correta selecionada nos botões radio
+  const radioChecked = document.querySelector('input[name="opcao_entrega"]:checked');
+  const opcaoEntrega = radioChecked ? radioChecked.value : 'Entrega programada (conforme cronograma)';
 
   if (!hospital) { toast('Preencha os campos obrigatórios (*).', 'error'); return; }
+  if (telefone && (telefone.length < 10 || telefone.length > 11)) {
+  toast('O telefone de contato deve conter entre 10 e 11 dígitos numéricos.', 'error'); return; }
 
   const mats = [];
+  let qtdValida = true;
   document.querySelectorAll('.mat-item').forEach(item => {
     const nome = item.querySelector('.mat-nome').value;
-    const qtd = parseInt(item.querySelector('.mat-qtd').value) || 1;
+    const qtd = parseFloat(item.querySelector('.mat-qtd').value);
+    if (!qtd || qtd === 0) qtdValida = false;
+    if (qtd < 0.5 || qtd > 30) qtdValida = false;
     if (nome) mats.push({ nome, quantity: qtd });
   });
+  if (!qtdValida) { toast('A quantidade permitida de cada item deve ser entre 0,5 e 30.', 'error'); return; }
   if (!mats.length) { toast('Adicione pelo menos um insumo à lista.', 'error'); return; }
 
   const btn = document.getElementById('btn-submit');
@@ -435,7 +524,14 @@ async function submitForm() {
       method: 'POST',
       mode: 'no-cors', 
       redirect: 'follow',
-      body: JSON.stringify({ action: 'createRequest', hospital, telefone, materiais: mats, observacao: observacao || null })
+      body: JSON.stringify({ 
+        action: 'createRequest', 
+        hospital, 
+        telefone, 
+        materiais: mats, 
+        observacao: observacao || null,
+        opcaoEntrega: opcaoEntrega // CORRIGIDO: Agora bate com o nome esperado na planilha
+      })
     });
     
     toast(`✓ Pedido enviado com sucesso para o CIAP!`, 'success');
@@ -453,6 +549,10 @@ function clearForm() {
   document.getElementById('telefone').value = '';
   document.getElementById('observacao').value = '';
   document.getElementById('mat-list').innerHTML = '';
+  
+  const defaultRadio = document.querySelector('input[name="opcao_entrega"][value="Entrega programada (conforme cronograma)"]');
+  if (defaultRadio) defaultRadio.checked = true;
+  
   addMaterial();
 }
 
@@ -479,7 +579,7 @@ function renderStats(data) {
   
   const totalMats = data ? data.reduce((s, r) => {
     if (!r.materiais) return s;
-    return s + r.materiais.reduce((sum, m) => sum + (parseInt(m.quantidade || m.quantity) || 1), 0);
+    return s + r.materiais.reduce((sum, m) => sum + (parseFloat(m.quantidade || m.quantity) || 1), 0);
   }, 0) : 0;
   
   const hospitais = data ? new Set(data.map(r => r.hospital).filter(Boolean)).size : 0;
@@ -526,7 +626,8 @@ function ocultarTelefone(tel) {
 function filterReqs() {
   const q = (document.getElementById('search-input').value || '').toLowerCase();
   const period = document.getElementById('date-filter').value;
-  
+  const delFilter = document.getElementById('delivery-filter').value;  
+
   let filtered = allReqs.filter(r => r.hospital && r.hospital.toLowerCase().includes(q));
   
   const now = new Date();
@@ -548,12 +649,37 @@ function filterReqs() {
     });
   }
   
+  if (delFilter !== 'todos') {
+    filtered = filtered.filter(r => {
+      const opt = r.opcaoEntrega || r.entrega || '';
+      return opt.toLowerCase().includes(delFilter.toLowerCase());
+    });
+  }
+
+
   renderStats(filtered);
   renderReqs(filtered);
 }
 
-/* FUNÇÃO ALTERADA: ENVIA O STATUS E DATA PARA A PLANILHA DO GOOGLE */
 async function changeStatus(id, value) {
+  // CONFIGURAÇÃO DA SENHA DE SEGURANÇA
+  const senhaCorreta = "triagem4100"; // Altere aqui o texto entre aspas para a senha que desejar
+  const senhaDigitada = prompt("Digite a senha de administrador para alterar o status do pedido:");
+
+  // Se o usuário clicou em Cancelar
+  if (senhaDigitada === null) {
+    filterReqs(); // Recarrega os pedidos para resetar o menu select ao estado original
+    return;
+  }
+
+  // Se a senha estiver incorreta
+  if (senhaDigitada !== senhaCorreta) {
+    toast("Senha incorreta! Alteração não autorizada.", "error");
+    filterReqs(); // Recarrega os pedidos para resetar o menu select ao estado original
+    return;
+  }
+
+  // Se passou na senha, executa a lógica padrão original
   const agora = new Date();
   const dia = String(agora.getDate()).padStart(2, '0');
   const mes = String(agora.getMonth() + 1).padStart(2, '0');
@@ -563,7 +689,6 @@ async function changeStatus(id, value) {
   
   const dataFormatada = value === 'entregue' ? `${dia}/${mes}/${ano} às ${horas}:${minutos}` : '';
 
-  // Atualização visual imediata local
   const card = document.getElementById('card-' + id);
   if (card) {
     card.style.borderLeft = value === 'entregue' ? '5px solid #10B981' : '1px solid var(--border)';
@@ -584,14 +709,13 @@ async function changeStatus(id, value) {
       })
     });
     
-    // Atualiza a memória local para não precisar recarregar o banco inteiro
     const req = allReqs.find(r => String(r.id) === String(id));
     if (req) {
       req.status = value;
       req.statusDate = dataFormatada;
     }
     
-    toast(`Status do pedido #${id} atualizado globalmente!`, 'success');
+    toast(`Status do pedido #${id} atualizado!`, 'success');
     filterReqs();
   } catch (e) {
     toast('Erro de conexão ao salvar status na planilha.', 'error');
@@ -605,6 +729,11 @@ function buildCardHtml(r) {
   const dateStr = r.data || r.date || r.timestamp || '';
   const dataExibicao = formatarData(dateStr);
   
+  // CORRIGIDO: Mapeia o campo correto devolvido pela planilha (opcaoEntrega)
+  const entregaInfo = r.opcaoEntrega || r.entrega || 'Entrega programada (conforme cronograma)';
+  const iconeEntrega = entregaInfo.toLowerCase().includes('recepção') ? '🏢' : '🚚';
+  const revertido = r.revertido || '';
+  
   return `
     <div class="req-card" id="card-${r.id}" style="${borderStyle}">
       <div class="req-header">
@@ -614,6 +743,9 @@ function buildCardHtml(r) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:4px;color:var(--accent)"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.06 1.18 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91A16 16 0 0016 17.91l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
             Contato: ${escHtml(ocultarTelefone(r.telefone))}
             ${dataExibicao ? `<span style="color:var(--text3); margin-left:10px;">| Envio: ${escHtml(dataExibicao)}</span>` : ''}
+          </div>
+          <div style="font-size: 13px; color: var(--text2); margin-top: 5px; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+            <span>${iconeEntrega} Logística: ${escHtml(entregaInfo)}</span>
           </div>
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
@@ -627,6 +759,7 @@ function buildCardHtml(r) {
       </div>
       <div class="mat-chips">${r.materiais ? r.materiais.map(m => `<span class="mat-chip"><span class="qty">${m.quantidade || m.quantity || 1}</span>${escHtml(m.nome)}</span>`).join('') : ''}</div>
       ${r.observacao ? `<div class="req-obs"><b>Nota:</b> ${escHtml(r.observacao)}</div>` : ''}
+      ${revertido ? `<div class="req-obs" style="color: var(--danger); border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 8px; font-weight: 400;">⚠️ Status do pedido revertido! </div>` : ''}
     </div>`;
 }
 
@@ -698,6 +831,68 @@ function renderReqs(list) {
             ${statusLabels[key]} (${grouped[key].length})
           </div>`;
         html += '<div class="req-list">' + grouped[key].slice().reverse().map(r => buildCardHtml(r)).join('') + '</div>';
+      }
+    });
+    area.innerHTML = html || '<div class="empty-state"><div class="empty-icon">📋</div><p>Nenhum registro encontrado.</p></div>';
+
+  } else if (groupBy === 'entrega_status') {
+    // CORRIGIDO: Agrupa cruzando dinamicamente Opção de Entrega + Status da Planilha
+    const grouped = {
+      'programada_pendente': [],
+      'programada_entregue': [],
+      'retirada_pendente': [],
+      'retirada_entregue': [],
+      'indefinido_pendente': [],
+      'indefinido_entregue': []
+    };
+
+    list.forEach(r => {
+      const entregaStr = String(r.opcaoEntrega || r.entrega || '').toLowerCase();
+      const statusStr = String(r.status || '').toLowerCase();
+      
+      let eKey = 'indefinido';
+      if (entregaStr.includes('programada')) eKey = 'programada';
+      else if (entregaStr.includes('recepção') || entregaStr.includes('retirada')) eKey = 'retirada';
+      
+      const sKey = (statusStr === 'entregue') ? 'entregue' : 'pendente';
+      const compositeKey = `${eKey}_${sKey}`;
+      
+      if (grouped[compositeKey]) {
+        grouped[compositeKey].push(r);
+      } else {
+        grouped['indefinido_' + sKey].push(r);
+      }
+    });
+
+    const combinedLabels = {
+      'programada_pendente': '⏳ Entrega Programada — Pedidos Pendentes',
+      'programada_entregue': '✔️ Entrega Programada — Pedidos Entregues',
+      'retirada_pendente': '⏳ Retirada na Recepção — Pedidos Pendentes',
+      'retirada_entregue': '✔️ Retirada na Recepção — Pedidos Entregues',
+      'indefinido_pendente': '⏳ Não Especificado — Pedidos Pendentes',
+      'indefinido_entregue': '✔️ Não Especificado — Pedidos Entregues'
+    };
+
+    let html = '';
+    const subKeys = [
+      'programada_pendente', 'programada_entregue', 
+      'retirada_pendente', 'retirada_entregue',
+      'indefinido_pendente', 'indefinido_entregue'
+    ];
+
+    subKeys.forEach(key => {
+      if (grouped[key] && grouped[key].length > 0) {
+        const isEntregue = key.endsWith('_entregue');
+        const corHeader = isEntregue ? '#10B981' : 'var(--warn)';
+        html += `
+          <div style="margin: 2rem 0 0.75rem 0; font-weight: 700; color: ${corHeader}; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+            ${isEntregue ? 
+              `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>` : 
+              `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+            }
+            ${combinedLabels[key]} (${grouped[key].length})
+          </div>
+          <div class="req-list">${grouped[key].slice().reverse().map(r => buildCardHtml(r)).join('')}</div>`;
       }
     });
     area.innerHTML = html || '<div class="empty-state"><div class="empty-icon">📋</div><p>Nenhum registro encontrado.</p></div>';
