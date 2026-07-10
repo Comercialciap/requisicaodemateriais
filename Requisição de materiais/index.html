@@ -428,7 +428,7 @@
 <div id="toast-container"></div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbzBJPpVZ8_93752DRfHI3fNf0R91_fVcbLdVaVydtCDnNGv8nc-jnLS94dTL9cvXCOE/exec';
+const API = 'https://script.google.com/macros/s/AKfycbzZ0WbgyMc1QTgYoJOVczirs55qjVEpnqNYZWdJuK3FJwZb8f8qK0UKgNbD6tx1BKtl/exec';
 
 const materiaisDisponiveis = [
   "Bloco de Pedido médico",
@@ -522,7 +522,6 @@ async function submitForm() {
   try {
     const res = await fetch(API, {
       method: 'POST',
-      mode: 'no-cors', 
       redirect: 'follow',
       body: JSON.stringify({ 
         action: 'createRequest', 
@@ -530,7 +529,7 @@ async function submitForm() {
         telefone, 
         materiais: mats, 
         observacao: observacao || null,
-        opcaoEntrega: opcaoEntrega // CORRIGIDO: Agora bate com o nome esperado na planilha
+        opcaoEntrega: opcaoEntrega 
       })
     });
     
@@ -656,39 +655,28 @@ function filterReqs() {
     });
   }
 
-
   renderStats(filtered);
   renderReqs(filtered);
 }
 
 async function changeStatus(id, value) {
-  // CONFIGURAÇÃO DA SENHA DE SEGURANÇA
-  const senhaCorreta = "triagem4100"; // Altere aqui o texto entre aspas para a senha que desejar
   const senhaDigitada = prompt("Digite a senha de administrador para alterar o status do pedido:");
 
   // Se o usuário clicou em Cancelar
   if (senhaDigitada === null) {
-    filterReqs(); // Recarrega os pedidos para resetar o menu select ao estado original
+    filterReqs(); 
     return;
   }
 
-  // Se a senha estiver incorreta
-  if (senhaDigitada !== senhaCorreta) {
-    toast("Senha incorreta! Alteração não autorizada.", "error");
-    filterReqs(); // Recarrega os pedidos para resetar o menu select ao estado original
-    return;
-  }
-
-  // Se passou na senha, executa a lógica padrão original
   const agora = new Date();
   const dia = String(agora.getDate()).padStart(2, '0');
   const mes = String(agora.getMonth() + 1).padStart(2, '0');
   const ano = agora.getFullYear();
   const horas = String(agora.getHours()).padStart(2, '0');
   const minutos = String(agora.getMinutes()).padStart(2, '0');
-  
-  const dataFormatada = value === 'entregue' ? `${dia}/${mes}/${ano} às ${horas}:${minutos}` : '';
 
+  const dataFormatada = value === 'entregue' ? `${dia}/${mes}/${ano}` : '';
+ 
   const card = document.getElementById('card-' + id);
   if (card) {
     card.style.borderLeft = value === 'entregue' ? '5px solid #10B981' : '1px solid var(--border)';
@@ -697,20 +685,38 @@ async function changeStatus(id, value) {
   toast(`Salvando alteração na planilha...`, 'success');
 
   try {
-    await fetch(API, {
+    // IMPORTANTE: Removeu-se o 'mode: no-cors' para podermos ler se a senha foi aceita ou rejeitada
+    const response = await fetch(API, {
       method: 'POST',
-      mode: 'no-cors',
       redirect: 'follow',
       body: JSON.stringify({
         action: 'updateStatus',
         id: id,
         status: value,
-        statusDate: dataFormatada
+        statusDate: dataFormatada,
+        password: senhaDigitada // Envia a senha para o servidor validar
       })
     });
     
+    const resultado = await response.json();
+    
+    // Se o servidor retornar que a senha está incorreta ou outro erro
+    if (resultado.status === 'error') {
+      toast(resultado.message, 'error');
+      filterReqs(); // Reseta o select da tela para o estado anterior
+      return;
+    }
+    
+    // Se passou na validação do servidor, aplica as alterações na tela na mesma hora
     const req = allReqs.find(r => String(r.id) === String(id));
     if (req) {
+      const oldStatus = String(req.status || "").toLowerCase();
+      const newStatus = String(value || "").toLowerCase();
+
+      if (oldStatus === "entregue" && (newStatus === "" || newStatus === "pendente")) {
+        req.revertido = "Sim";
+      }
+
       req.status = value;
       req.statusDate = dataFormatada;
     }
@@ -719,6 +725,7 @@ async function changeStatus(id, value) {
     filterReqs();
   } catch (e) {
     toast('Erro de conexão ao salvar status na planilha.', 'error');
+    filterReqs();
   }
 }
 
@@ -729,7 +736,6 @@ function buildCardHtml(r) {
   const dateStr = r.data || r.date || r.timestamp || '';
   const dataExibicao = formatarData(dateStr);
   
-  // CORRIGIDO: Mapeia o campo correto devolvido pela planilha (opcaoEntrega)
   const entregaInfo = r.opcaoEntrega || r.entrega || 'Entrega programada (conforme cronograma)';
   const iconeEntrega = entregaInfo.toLowerCase().includes('recepção') ? '🏢' : '🚚';
   const revertido = r.revertido || '';
@@ -836,7 +842,6 @@ function renderReqs(list) {
     area.innerHTML = html || '<div class="empty-state"><div class="empty-icon">📋</div><p>Nenhum registro encontrado.</p></div>';
 
   } else if (groupBy === 'entrega_status') {
-    // CORRIGIDO: Agrupa cruzando dinamicamente Opção de Entrega + Status da Planilha
     const grouped = {
       'programada_pendente': [],
       'programada_entregue': [],
