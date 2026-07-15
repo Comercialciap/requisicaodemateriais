@@ -814,6 +814,7 @@ function buildCardHtml(r) {
   
   // LÓGICA DO MODO LOGÍSTICA
   const nomeExibido = logisticaAutenticada ? r.hospital : obterIniciais(r.hospital);
+  const telefoneExibido = logisticaAutenticada ? (r.telefone || 'Não informado') : ocultarTelefone(r.telefone);
   const selectEstado = logisticaAutenticada ? '' : 'disabled';
 
   return `
@@ -823,7 +824,7 @@ function buildCardHtml(r) {
           <div class="req-hospital">${escHtml(nomeExibido)}</div>
           <div class="req-phone">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:4px;color:var(--accent)"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.06 1.18 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91A16 16 0 0016 17.91l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-            Contato: ${escHtml(ocultarTelefone(r.telefone))}
+           Contato: ${escHtml(telefoneExibido)}  <!-- ALTERADO AQUI -->
             ${dataExibicao ? `<span style="color:var(--text3); margin-left:10px;">| Envio: ${escHtml(dataExibicao)}</span>` : ''}
           </div>
           <div style="font-size: 13px; color: var(--text2); margin-top: 5px; display: flex; align-items: center; gap: 4px; font-weight: 600;">
